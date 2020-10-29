@@ -28,5 +28,5 @@ save_model:
 image:
   size: 150 
 
-platform: local
+platform: gcp
   
