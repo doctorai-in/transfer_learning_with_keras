@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  training:
+    image: keras-training-module
+    build:
+      context: .
+      dockerfile: Dockerfile
+    privileged: true  
+    volumes:
+      - .:/home/tensorflow/
+    tty: true  
+    command: python transfer_learning_with_keras/train.py 

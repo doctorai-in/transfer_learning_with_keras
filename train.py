@@ -20,13 +20,15 @@ from keras.layers import Input, Activation, add, Dense, Flatten
 from keras.preprocessing.image import ImageDataGenerator
 import yaml
 import keras
+import sys
+#sys.path.append('../')
 
 ########### Logger setup ##############
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 ######### Load config ######################################
-stream = open('/home/omen/lab/GCP/Transfer_Learning/training_module_keras/config.yaml', 'r')
+stream = open('transfer_learning_with_keras/config.yaml', 'r')
 config_arg = yaml.safe_load(stream)
 ######## set argument ######################################
 epochs = int(config_arg['training']['epoch'])
@@ -45,10 +47,19 @@ MODEL_FILE = config_arg['type'] + model_version + '_model.h5'
 WEIGHT_FILE = config_arg['type'] + model_version + '_weights_.h5'
 HISTORY_FILE = 'history_' + config_arg['type'] + model_version + '.csv'
 LR_FILE='lr_' + config_arg['type'] + model_version + '.csv'
+platform = config_arg['platform']
 
-TRAIN_DIR = config_arg['data']['train']
+if platform == 'gcp':
+    TRAIN_DIR = config_arg['data']['gcp']['train']
+    EVAL_DIR = config_arg['data']['gcp']['test']
+    destination = config_arg['save_model']['gcp']['path_prefix']
+else:
+    TRAIN_DIR = config_arg['data']['local']['train']
+    EVAL_DIR = config_arg['data']['local']['test']
+    destination = config_arg['save_model']['local']['path_prefix']
 
-EVAL_DIR = config_arg['data']['test']
+
+
 
 ########### Training data generator ########
 datagen = ImageDataGenerator()
@@ -115,7 +126,6 @@ model.summary()
 
 
 ############# Support infra #########
-destination = config_arg['save_model']['path_prefix']
 checkpoint_path = None
 log_path = None
 

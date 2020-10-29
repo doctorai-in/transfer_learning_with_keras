@@ -6,8 +6,12 @@ training:
   loss: binary_crossentropy
   
 data:
-  test: ./dataset/test_set
-  train: ./dataset/training_set
+  gcp:
+    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/test
+    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/train
+  local:
+    test: ./dataset/test_set
+    train: ./dataset/training_set
 
 type: cat_dog_clf
 
@@ -15,7 +19,14 @@ data_generator:
   class_mode: binary
 
 save_model:
-  path_prefix: ./models/ 
+  gcp :
+    path_prefix: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/models/ 
+  local:
+    path_prefix: ./models/
+
   
 image:
   size: 150 
+
+platform: local
+  
