@@ -10,8 +10,8 @@ data:
     test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/test
     train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/train
   local:
-    test: ./dataset/test_set
-    train: ./dataset/training_set
+    test: ./data/test
+    train: ./data/train
 
 type: cat_dog_clf
 
@@ -28,5 +28,5 @@ save_model:
 image:
   size: 150 
 
-platform: gcp
+platform: local
   

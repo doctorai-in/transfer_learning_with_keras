@@ -50,9 +50,10 @@ LR_FILE='lr_' + config_arg['type'] + model_version + '.csv'
 platform = config_arg['platform']
 
 if platform == 'gcp':
-    TRAIN_DIR = config_arg['data']['gcp']['train']
-    EVAL_DIR = config_arg['data']['gcp']['test']
-    destination = config_arg['save_model']['gcp']['path_prefix']
+    os.system('gsutil cp -r gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data .')
+    TRAIN_DIR = config_arg['data']['local']['train']
+    EVAL_DIR = config_arg['data']['local']['test']
+    destination = config_arg['save_model']['local']['path_prefix']
 else:
     TRAIN_DIR = config_arg['data']['local']['train']
     EVAL_DIR = config_arg['data']['local']['test']
