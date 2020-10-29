@@ -1,0 +1,21 @@
+training:
+  epoch: 10
+  train_batch: 32
+  val_batch: 4
+  version: 1
+  loss: binary_crossentropy
+  
+data:
+  test: ./dataset/test_set
+  train: ./dataset/training_set
+
+type: cat_dog_clf
+
+data_generator:
+  class_mode: binary
+
+save_model:
+  path_prefix: ./models/ 
+  
+image:
+  size: 150 
