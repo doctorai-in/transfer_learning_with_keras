@@ -1,7 +1,7 @@
 training:
-  epoch: 10
-  train_batch: 32
-  val_batch: 4
+  epoch: 1
+  train_batch: 1
+  val_batch: 1
   version: 1
   loss: binary_crossentropy
   
@@ -26,7 +26,10 @@ save_model:
 
   
 image:
-  size: 150 
+  size: 224
+  raw_data:
+    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training 
+    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training
 
-platform: local
+platform: gcp
   

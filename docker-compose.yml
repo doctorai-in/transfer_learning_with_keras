@@ -10,4 +10,4 @@ services:
     volumes:
       - .:/home/tensorflow/
     tty: true  
-    command: python transfer_learning_with_keras/train.py 
+    command: python transfer_learning_with_keras/train_gcp.py 

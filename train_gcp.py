@@ -2,8 +2,8 @@ from __future__ import division
 import tensorflow as tf
 import logging
 import argparse
-from keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard, ReduceLROnPlateau
-from keras.optimizers import SGD, Adam
+from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard, ReduceLROnPlateau
+from tensorflow.keras.optimizers import SGD, Adam
 import string
 import os
 import pandas as pd
@@ -11,18 +11,19 @@ import random
 import numpy as np
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import accuracy_score
-from keras import backend as K
-from keras.metrics import binary_accuracy
-from keras.models import load_model
+from tensorflow.keras import backend as K
+from tensorflow.keras.metrics import binary_accuracy
+from tensorflow.keras.models import load_model
 import shutil
-from keras.models import Model
-from keras.layers import Input, Activation, add, Dense, Flatten
-from keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Activation, add, Dense, Flatten
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import yaml
-import keras
+import tensorflow.keras as keras
 import sys
+from load_tf_record import TFRecordLoader
 #sys.path.append('../')
-
+from utils.dataset import get_dataset
 ########### Logger setup ##############
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -47,12 +48,11 @@ MODEL_FILE = config_arg['type'] + model_version + '_model.h5'
 WEIGHT_FILE = config_arg['type'] + model_version + '_weights_.h5'
 HISTORY_FILE = 'history_' + config_arg['type'] + model_version + '.csv'
 LR_FILE='lr_' + config_arg['type'] + model_version + '.csv'
-platform = config_arg['platform']
-
+platform = str(config_arg['platform'])
+print("platform", platform=="gcp")
 if platform == 'gcp':
-    os.system('gsutil cp -r gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data .')
-    TRAIN_DIR = config_arg['data']['local']['train']
-    EVAL_DIR = config_arg['data']['local']['test']
+    TRAIN_DIR = str(config_arg['data']['gcp']['train'])
+    EVAL_DIR = str(config_arg['data']['gcp']['test'])
     destination = config_arg['save_model']['local']['path_prefix']
 else:
     TRAIN_DIR = config_arg['data']['local']['train']
@@ -63,28 +63,19 @@ else:
 
 
 ########### Training data generator ########
-datagen = ImageDataGenerator()
-train_generator = datagen.flow_from_directory(
-    directory=TRAIN_DIR,
-    target_size=(img_target_size, img_target_size),
-    color_mode="rgb",
-    batch_size=batch_size,
-    class_mode=class_mode,
-    shuffle=True,
-    seed=42
-)
+#FILENAMES_TRAIN = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/train*")
+#FILENAMES_EVAL = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/test*")
 
-print("train_label : ", train_generator.class_indices)
-eval_generator = datagen.flow_from_directory(
-    directory=EVAL_DIR,
-    target_size=(img_target_size, img_target_size),
-    color_mode="rgb",
-    batch_size=batch_size,
-    class_mode=class_mode,
-    shuffle=True,
-    seed=42
-)
-print("eval label: ", eval_generator.class_indices)
+#data_loader = TFRecordLoader(batch_size, img_target_size)
+print(TRAIN_DIR)
+print(EVAL_DIR)
+train_generator = get_dataset(TRAIN_DIR, 'train', batch_size=batch_size)
+eval_generator =  get_dataset(EVAL_DIR, 'test', batch_size=1)
+debug=False
+if debug:
+    image_batch, label_batch = next(iter(train_generator))
+    data_loader.show_batch(image_batch.numpy(), label_batch.numpy())
+    print("train_generator: ", train_generator)
 ############ Define Model ##############
 nb_epochs = epochs
 
@@ -107,19 +98,22 @@ flatten = Flatten()(x)
 fc1 = Dense(units = 128, activation = 'relu')(flatten)
 fc2_out = Dense(units = 1, activation = 'sigmoid')(fc1)
 
-model = keras.Model(inputs, fc2_out)
+model = tf.keras.Model(inputs, fc2_out)
 
 #for layer in basemodel.layers:
     #layer.trainable = False
 
 
 opt = Adam(lr=5e-4, decay=0.1)
-
-model.compile(
-    loss=loss,
-    metrics=['accuracy'],
-    optimizer=opt,
+initial_learning_rate = 0.01
+lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+    initial_learning_rate, decay_steps=20, decay_rate=0.96, staircase=True
 )
+model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
+        loss="binary_crossentropy",
+        metrics=['accuracy'],
+    )
 
 logger.debug("Model summary...")
 model.count_params()
@@ -165,21 +159,22 @@ def schedule(epoch, lr):
 #lr_scheduler = LearningRateScheduler(schedule, verbose=0)
 
 callbacks = [
-ModelCheckpoint(
-    os.path.join(checkpoint_path, CHECK_POINT),
-    monitor="val_loss",
-    verbose=1,
-    save_best_only=True,
-    mode="auto"
-),
-TensorBoard(log_dir= os.path.join(log_path,run_id) ),
-#lr_scheduler,
-]
+    ModelCheckpoint(
+        os.path.join(checkpoint_path, CHECK_POINT),
+        monitor="val_loss",
+        verbose=1,
+        save_best_only=True,
+        mode="auto"
+        ),
+    TensorBoard(log_dir= os.path.join(log_path,run_id) ),
+    #lr_scheduler,
+    ]
 
 ########### Run the model #############
-hist = model.fit_generator(
-generator=train_generator,
-callbacks = callbacks,# there are around 9776 images, % by batch size of 16
+hist = model.fit(
+train_generator,
+callbacks = callbacks,
+batch_size=16,# there are around 9776 images, % by batch size of 16
 epochs=nb_epochs,
 validation_data=eval_generator,
 shuffle=True,
