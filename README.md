@@ -33,3 +33,20 @@ callbacks = [
 * save model architecture in both YAML and JSON format.
 * save model weights and architecture into a single file for later use.
 
+`Saving History loss and accuracy in csv`
+-----------------------------------------
+```
+hist = model.fit(
+    train_generator,
+    callbacks = callbacks,
+    batch_size=16,
+    steps_per_epoch = 10,
+    epochs=nb_epochs,
+    validation_data=eval_generator,
+    shuffle=True,
+    validation_steps=2,
+    )
+pd.DataFrame(hist.history).to_csv(os.path.join(destination,HISTORY_FILE))
+```
+
+
