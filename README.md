@@ -8,6 +8,8 @@ How to save model and visualize on tensorboard.
 `Using Callbacks in model.fit()`
 --------------------------------
 ```
+from tensorflow.keras.callbacks import LearningRateScheduler, ModelCheckpoint, TensorBoard, ReduceLROnPlateau
+
 callbacks = [
     ModelCheckpoint(
         os.path.join(checkpoint_path, CHECK_POINT),
@@ -18,6 +20,17 @@ callbacks = [
         ),
     TensorBoard(log_dir= os.path.join(log_path,run_id) )
     ]
+
+hist = model.fit(
+    train_generator,
+    callbacks = callbacks,
+    batch_size=16,
+    steps_per_epoch = 10,
+    epochs=nb_epochs,
+    validation_data=eval_generator,
+    shuffle=True,
+    validation_steps=2,
+    )
  ```
   * `ModelCheckpoint` - saving a model checkpoint `best model only` at every checkpoint.
   * `TensorBoard` -  Saving Training meta-data so we can visualize train and validation graph for `loss` and `accuracy`.
