@@ -42,7 +42,7 @@ class_mode = config_arg['data_generator']['class_mode'] # binary or categorical
 img_target_size = config_arg['image']['size']
 
 
-MODEL_ARCHITECTURE = config_arg['type'] + model_version + ".json"
+MODEL_ARCHITECTURE = config_arg['type'] + model_version + ".yaml"
 CHECK_POINT = config_arg['type'] + model_version + '_weights.{epoch:02d}-{loss:.2f}.hdf5'
 MODEL_FILE = config_arg['type'] + model_version + '_model.h5'
 WEIGHT_FILE = config_arg['type'] + model_version + '_weights_.h5'
@@ -140,10 +140,23 @@ logger.info("Finished creating {}".format(destination))
 
 
 # Write model architecture
-with open(os.path.join(destination , MODEL_ARCHITECTURE), "w") as f:
-        f.write(model.to_json())
+# serialize model to JSON ot YAML eg. model.to_json() or model.to_yaml()
+# loding from json and yaml the architecture : 
+# load YAML and model
+'''
+yaml_file = open('model.yaml', 'r')
+loaded_model_yaml = yaml_file.read()
+yaml_file.close()
+loaded_model = model_from_yaml(loaded_model_yaml)
+# load weights into new model
+loaded_model.load_weights("model.h5")
+print("Loaded model from disk")
+'''
+model_json = model.to_yaml()
+with open(os.path.join(destination , MODEL_ARCHITECTURE), "w") as json_file:
+    json_file.write(model_json)
 
-run_id = "cat_dog - " + str(batch_size) + " " + '' \
+run_id = "cat_dog-" + str(batch_size) + "-" + '' \
 .join(random
       .SystemRandom()
       .choice(string.ascii_uppercase) for _ in range(10)
@@ -174,7 +187,8 @@ callbacks = [
 hist = model.fit(
 train_generator,
 callbacks = callbacks,
-batch_size=16,# there are around 9776 images, % by batch size of 16
+batch_size=16,
+steps_per_epoch = 10,# there are around 9776 images, % by batch size of 16
 epochs=nb_epochs,
 validation_data=eval_generator,
 shuffle=True,
@@ -186,6 +200,7 @@ validation_steps=2,
 #print(lr_scheduler.history)
 
 ######## Save Model ###############
+# refer to article : https://machinelearningmastery.com/save-load-keras-deep-learning-models/
 logger.info("save model")
 model.save(os.path.join(destination, MODEL_FILE))
 model.save_weights(os.path.join(destination, WEIGHT_FILE), overwrite=True)
