@@ -28,7 +28,8 @@ callbacks = [
 
 `Saving and loading model`
 --------------------------
-  * save model weights and model architecture in separate files.
-  * save model architecture in both YAML and JSON format.
-  * save model weights and architecture into a single file for later use.
+- [Refer to article](https://machinelearningmastery.com/save-load-keras-deep-learning-models/)
+* save model weights and model architecture in separate files.
+* save model architecture in both YAML and JSON format.
+* save model weights and architecture into a single file for later use.
 
