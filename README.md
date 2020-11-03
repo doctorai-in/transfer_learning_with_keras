@@ -16,8 +16,7 @@ callbacks = [
         save_best_only=True,
         mode="auto"
         ),
-    TensorBoard(log_dir= os.path.join(log_path,run_id) ),
-    #lr_scheduler,
+    TensorBoard(log_dir= os.path.join(log_path,run_id) )
     ]
  ```
   * `ModelCheckpoint` - saving a model checkpoint `best model only` at every checkpoint.
