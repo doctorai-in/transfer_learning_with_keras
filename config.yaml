@@ -7,8 +7,8 @@ training:
   
 data:
   gcp:
-    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/test
-    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/train
+    test: gs://aj-instance-1/data/data/test
+    train: gs:/aj-instance-1/data/data/train
   local:
     test: ./data/test
     train: ./data/train
@@ -20,7 +20,7 @@ data_generator:
 
 save_model:
   gcp :
-    path_prefix: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/models/ 
+    path_prefix: gs://aj-instance-1/data/data/test # dummy  
   local:
     path_prefix: ./models/
 
@@ -28,8 +28,8 @@ save_model:
 image:
   size: 224
   raw_data:
-    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training 
-    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training
+    test: aj-instance-1/data/data/test # dummy
+    train: aj-instance-1/data/data/test # dummy
 
 platform: gcp
   
