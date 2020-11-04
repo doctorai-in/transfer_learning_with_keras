@@ -8,7 +8,7 @@ training:
 data:
   gcp:
     test: gs://aj-instance-1/data/data/test
-    train: gs:/aj-instance-1/data/data/train
+    train: gs://aj-instance-1/data/data/train
   local:
     test: ./data/test
     train: ./data/train
