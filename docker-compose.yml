@@ -1,15 +1,54 @@
-version: '3.4'
+version: '2.3'
 
 services:
-  training:
+  
+  # Building Tfrecord
+  build_tfrecord:
     image: keras-training-module
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - .:/home/tensorflow/
+    tty: true  
+    command: python transfer_learning_with_keras/build_tf_record.py   
+  
+  # Container for training
+  training:
+    image: keras-training-module
     privileged: true
+    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
       - .:/home/tensorflow/
     tty: true  
     command: python transfer_learning_with_keras/train_gcp.py 
+    depends_on: 
+      - build_tfrecord
+  
+  # container for Serving model exposing to endpoints
+  model-serving:
+    image: tensorflow/serving
+    runtime: nvidia
+    ports: 
+      - "8501:8501"
+      - "8500:8500"
+    environment:
+      - MODEL_NAME=save_model
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MODEL_BASE_PATH=gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/models/
+
+    command: --port=8500 --rest_api_port=8501 --model_name=save_model --model_base_path=gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/models/save_model/
+
+networks:
+  frontend:
+  backend:
+
+volumes:
+  db-data:
+  
+
+

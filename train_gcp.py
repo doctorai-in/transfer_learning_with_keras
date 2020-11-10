@@ -1,3 +1,7 @@
+###########################################################################
+#                            Copyright                                    #
+###########################################################################
+
 from __future__ import division
 import tensorflow as tf
 import logging
@@ -22,81 +26,53 @@ import yaml
 import tensorflow.keras as keras
 import sys
 from load_tf_record import TFRecordLoader
-#sys.path.append('../')
 from utils.dataset import get_dataset
-########### Logger setup ##############
+from tensorflow.keras.models import save_model
+import datetime
+from config import variable_config
+#############################################################################
+# 
+#############################################################################
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-######### Load config ######################################
+########### Training data generator ########
+
 stream = open('transfer_learning_with_keras/config.yaml', 'r')
 config_arg = yaml.safe_load(stream)
-######## set argument ######################################
-epochs = int(config_arg['training']['epoch'])
-print('epochs == {}'.format(epochs))
-batch_size = int(config_arg['training']['train_batch'])
-val_batch_size = int(config_arg['training']['val_batch'])
-model_version = str(config_arg['training']['version'])
-loss = config_arg['training']['loss'] # binary_crossentropy or categorical_crossentropy
-class_mode = config_arg['data_generator']['class_mode'] # binary or categorical
-img_target_size = config_arg['image']['size']
-
-
-MODEL_ARCHITECTURE = config_arg['type'] + model_version + ".yaml"
-CHECK_POINT = config_arg['type'] + model_version + '_weights.{epoch:02d}-{loss:.2f}.hdf5'
-MODEL_FILE = config_arg['type'] + model_version + '_model.h5'
-WEIGHT_FILE = config_arg['type'] + model_version + '_weights_.h5'
-HISTORY_FILE = 'history_' + config_arg['type'] + model_version + '.csv'
-LR_FILE='lr_' + config_arg['type'] + model_version + '.csv'
-platform = str(config_arg['platform'])
-print("platform", platform=="gcp")
-if platform == 'gcp':
-    TRAIN_DIR = str(config_arg['data']['gcp']['train'])
-    EVAL_DIR = str(config_arg['data']['gcp']['test'])
-    destination = config_arg['save_model']['local']['path_prefix']
-else:
-    TRAIN_DIR = config_arg['data']['local']['train']
-    EVAL_DIR = config_arg['data']['local']['test']
-    destination = config_arg['save_model']['local']['path_prefix']
-
-
-
-
-########### Training data generator ########
-#FILENAMES_TRAIN = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/train*")
-#FILENAMES_EVAL = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/test*")
-
+config = variable_config(config_arg)
 #data_loader = TFRecordLoader(batch_size, img_target_size)
-print(TRAIN_DIR)
-print(EVAL_DIR)
-train_generator = get_dataset(TRAIN_DIR, 'train', batch_size=batch_size)
-eval_generator =  get_dataset(EVAL_DIR, 'test', batch_size=1)
+print(config.TRAIN_DIR)
+print(config.EVAL_DIR)
+train_generator = get_dataset(config.TRAIN_DIR, 'train', batch_size=config.batch_size)
+eval_generator =  get_dataset(config.EVAL_DIR, 'test', batch_size=1)
+train_generator.take(1)
+print("train_generator: ", train_generator)
 debug=False
 if debug:
     image_batch, label_batch = next(iter(train_generator))
     data_loader.show_batch(image_batch.numpy(), label_batch.numpy())
     print("train_generator: ", train_generator)
 ############ Define Model ##############
-nb_epochs = epochs
+nb_epochs = config.epochs
 
 
 # Create base model
 basemodel = keras.applications.Xception(
     weights='imagenet',
-    input_shape=(img_target_size, img_target_size, 3),
+    input_shape=(config.img_target_size, config.img_target_size, 3),
     include_top=False)
 
 # Freeze base model
 basemodel.trainable = False
 
 # Create new model on top.
-inputs = keras.Input(shape=(img_target_size, img_target_size, 3))
+inputs = keras.Input(shape=(config.img_target_size, config.img_target_size, 3))
 x = basemodel(inputs, training=False)
 
 # Full connection
-flatten = Flatten()(x) 
-fc1 = Dense(units = 128, activation = 'relu')(flatten)
-fc2_out = Dense(units = 1, activation = 'sigmoid')(fc1)
+x = keras.layers.GlobalAveragePooling2D()(x) 
+fc2_out = Dense(1)(x)
 
 model = tf.keras.Model(inputs, fc2_out)
 
@@ -111,8 +87,8 @@ lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
 )
 model.compile(
         optimizer=tf.keras.optimizers.Adam(learning_rate=lr_schedule),
-        loss="binary_crossentropy",
-        metrics=['accuracy'],
+        loss=keras.losses.BinaryCrossentropy(from_logits=True),
+        metrics=[keras.metrics.BinaryAccuracy()]
     )
 
 logger.debug("Model summary...")
@@ -124,10 +100,11 @@ model.summary()
 ############# Support infra #########
 checkpoint_path = None
 log_path = None
-
+destination = config.destination
 dirpath = os.getcwd()
 print("current directory is : " + dirpath)
-destination = destination + model_version
+save_model_path = destination + "save_model/" + str(config_arg['training']['version'])  
+destination = destination + config.model_version
 if os.path.isdir(destination):
     shutil.rmtree(destination, ignore_errors = True)
     logger.info("Removed old {}".format(destination))
@@ -153,14 +130,11 @@ loaded_model.load_weights("model.h5")
 print("Loaded model from disk")
 '''
 model_json = model.to_yaml()
-with open(os.path.join(destination , MODEL_ARCHITECTURE), "w") as json_file:
+with open(os.path.join(destination , config.MODEL_ARCHITECTURE), "w") as json_file:
     json_file.write(model_json)
 
-run_id = "cat_dog-" + str(batch_size) + "-" + '' \
-.join(random
-      .SystemRandom()
-      .choice(string.ascii_uppercase) for _ in range(10)
-)
+run_id = "cat_dog-" + str(config.batch_size) + "-" + '' \
+.join(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
 
 
 from keras.callbacks import LearningRateScheduler
@@ -173,7 +147,7 @@ def schedule(epoch, lr):
 
 callbacks = [
     ModelCheckpoint(
-        os.path.join(checkpoint_path, CHECK_POINT),
+        os.path.join(checkpoint_path, config.CHECK_POINT),
         monitor="val_loss",
         verbose=1,
         save_best_only=True,
@@ -199,9 +173,60 @@ validation_steps=2,
 ## Print lr ###
 #print(lr_scheduler.history)
 
+
+    
+
 ######## Save Model ###############
 # refer to article : https://machinelearningmastery.com/save-load-keras-deep-learning-models/
+#https://github.com/damienpontifex/mobilenet-classifier-transfer/blob/master/binary_classifier_train.py
+#https://www.tensorflow.org/tfx/serving/api_rest
+#https://www.tensorflow.org/tfx/serving/api_rest
+#https://www.tensorflow.org/guide/saved_model#exporting_custom_models
+#https://www.tensorflow.org/guide/saved_model
+save_path_pb = save_model_path
 logger.info("save model")
-model.save(os.path.join(destination, MODEL_FILE))
-model.save_weights(os.path.join(destination, WEIGHT_FILE), overwrite=True)
-pd.DataFrame(hist.history).to_csv(os.path.join(destination,HISTORY_FILE))
+#model.save(os.path.join(destination, MODEL_FILE), save_format="tf")
+
+#model.save(save_path_pb, save_format="tf", signatures=serving)
+tf.saved_model.save(model, save_path_pb)
+model.save_weights(os.path.join(destination, config.WEIGHT_FILE), overwrite=True)
+pd.DataFrame(hist.history).to_csv(os.path.join(destination, config.HISTORY_FILE))
+###################################################################################
+#                                 END OF code                                     #
+###################################################################################
+
+
+
+
+
+
+
+###################################################################################
+#                                 Code Snippet                                    #
+###################################################################################
+#FILENAMES_TRAIN = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/train*")
+#FILENAMES_EVAL = tf.io.gfile.glob("/home/omen/lab/GCP/Transfer_Learning/tfrecord/test*")
+'''
+@tf.function(input_signature=[tf.TensorSpec(shape=[None], dtype=tf.string)])
+def serving(input_image):
+
+    # Convert bytes of jpeg input to float32 tensor for model
+    def _input_to_feature(img):
+        img = tf.io.decode_jpeg(img, channels=3)
+        img = tf.image.convert_image_dtype(img, tf.float32)
+        img = tf.image.resize_with_pad(img, 224, 224)
+        return img
+    img = tf.map_fn(_input_to_feature, input_image, dtype=tf.float32)
+
+    # Predict
+    predictions = model(img)
+
+    
+
+    # Single output for model so collapse final axis for vector output
+    predictions = tf.squeeze(predictions, axis=-1)
+
+    
+    return {
+        'probabilities': 0
+    }'''

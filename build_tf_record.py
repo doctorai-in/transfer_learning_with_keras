@@ -74,21 +74,27 @@ import threading
 
 import numpy as np
 import tensorflow.compat.v1 as tf
-tf.disable_eager_execution()
 
-tf.app.flags.DEFINE_string('train_directory', '/home/omen/lab/GCP/Transfer_Learning/data/test',
+tf.disable_eager_execution()
+import yaml
+######### Load config ######################################
+stream = open('transfer_learning_with_keras/config.yaml', 'r')
+config_arg = yaml.safe_load(stream)
+print(int(config_arg["image"]["raw_data"]["train_shard"]))
+############################################################
+tf.app.flags.DEFINE_string('train_directory', config_arg["image"]["raw_data"]["train"],
                            'Training data directory')
-tf.app.flags.DEFINE_string('validation_directory', '/home/omen/lab/GCP/Transfer_Learning/data/test',
+tf.app.flags.DEFINE_string('validation_directory', config_arg["image"]["raw_data"]["test"],
                            'Validation data directory')
-tf.app.flags.DEFINE_string('output_directory', '/home/omen/lab/GCP/Transfer_Learning/tfrecord',
+tf.app.flags.DEFINE_string('output_directory', config_arg["image"]["raw_data"]["tfrecord_path"],
                            'Output data directory')
 
-tf.app.flags.DEFINE_integer('train_shards', 2,
+tf.app.flags.DEFINE_integer('train_shards', int(config_arg["image"]["raw_data"]["train_shard"]),
                             'Number of shards in training TFRecord files.')
-tf.app.flags.DEFINE_integer('validation_shards', 2,
+tf.app.flags.DEFINE_integer('validation_shards', int(config_arg["image"]["raw_data"]["test_shard"]),
                             'Number of shards in validation TFRecord files.')
 
-tf.app.flags.DEFINE_integer('num_threads', 2,
+tf.app.flags.DEFINE_integer('num_threads', config_arg["image"]["raw_data"]["threads"],
                             'Number of threads to preprocess the images.')
 
 # The labels file contains a list of valid labels are held in this file.
@@ -99,7 +105,6 @@ tf.app.flags.DEFINE_integer('num_threads', 2,
 # where each line corresponds to a label. We map each label contained in
 # the file to an integer corresponding to the line number starting from 0.
 tf.app.flags.DEFINE_string('labels_file', '/home/omen/lab/GCP/Transfer_Learning/labels_file', 'Labels file')
-
 
 FLAGS = tf.app.flags.FLAGS
 
@@ -301,6 +306,7 @@ def _process_image_files(name, filenames, texts, labels, num_shards):
   """
   assert len(filenames) == len(texts)
   assert len(filenames) == len(labels)
+  print("Labels", labels)
 
   # Break all images into batches with a [ranges[i][0], ranges[i][1]].
   spacing = np.linspace(0, len(filenames), FLAGS.num_threads + 1).astype(np.int)

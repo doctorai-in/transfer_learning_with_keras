@@ -2,13 +2,13 @@ training:
   epoch: 2
   train_batch: 8
   val_batch: 4
-  version: 2
+  version: 8
   loss: binary_crossentropy
   
 data:
   gcp:
-    test: gs://aj-instance-1/data/data/test
-    train: gs://aj-instance-1/data/data/train
+    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/tfrecord
+    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/tfrecord
   local:
     test: ./data/test
     train: ./data/train
@@ -20,16 +20,28 @@ data_generator:
 
 save_model:
   gcp :
-    path_prefix: gs://aj-instance-1/data/data/test # dummy  
+    path_prefix: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/models/ # dummy  
   local:
     path_prefix: ./models/
+
+export_model:
+  model_path: 
+  model_pb_path:  '/home/dldevmax/projects/gopi/facedetection/models/pb/'
+  model_pb_name:  'facenet_model.pb'
+
+
 
   
 image:
   size: 224
   raw_data:
-    test: aj-instance-1/data/data/test # dummy
-    train: aj-instance-1/data/data/test # dummy
+    test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/raw_data/test  #./data/test # dummy
+    train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/raw_data/train #./data/train # dummy
+    tfrecord_path: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/tfrecord
+    test_shard: 4
+    train_shard: 4
+    threads: 4
+    label_file: ./labels_file
 
 platform: gcp
   

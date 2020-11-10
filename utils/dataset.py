@@ -82,7 +82,9 @@ def _parse_fn(example_serialized, is_training):
         image = resize_and_rescale_image(image, 224, 224)
     # The label in the tfrecords is 1~1000 (0 not used).
     # So I think the minus 1 (of class label) is needed below.
+    print("LABEL :", parsed['image/class/label'])
     label = tf.one_hot(parsed['image/class/label'] - 1, 1, dtype=tf.float32)
+    print("LABEL_PREPARED :", label)
     return (image, label)
 
 
