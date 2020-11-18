@@ -78,7 +78,7 @@ import tensorflow.compat.v1 as tf
 tf.disable_eager_execution()
 import yaml
 ######### Load config ######################################
-stream = open('transfer_learning_with_keras/config.yaml', 'r')
+stream = open('config.yaml', 'r')
 config_arg = yaml.safe_load(stream)
 print(int(config_arg["image"]["raw_data"]["train_shard"]))
 ############################################################

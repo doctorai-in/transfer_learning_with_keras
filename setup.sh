@@ -39,5 +39,6 @@ sudo apt-get install -y nvidia-docker2
 
 sudo systemctl restart docker
 
+cd transfer_learning_with_keras
 sudo docker-compose up
    

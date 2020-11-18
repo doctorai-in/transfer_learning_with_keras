@@ -11,21 +11,20 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - .:/home/tensorflow/
+      - .:/home/tensorflow/transfer-learning
     tty: true  
-    command: python transfer_learning_with_keras/build_tf_record.py   
+    command: python build_tf_record.py   
   
   # Container for training
   training:
     image: keras-training-module
-    privileged: true
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - .:/home/tensorflow/
+      - .:/home/tensorflow/transfer-learning
     tty: true  
-    command: python transfer_learning_with_keras/train_gcp.py 
+    command: python train_gcp.py 
     depends_on: 
       - build_tfrecord
   

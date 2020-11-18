@@ -34,7 +34,9 @@ export_model:
   
 image:
   size: 224
+  show_image: False
   raw_data:
+    path: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/raw_data
     test: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/raw_data/test  #./data/test # dummy
     train: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/raw_data/train #./data/train # dummy
     tfrecord_path: gs://kubeflow-test-288607-kubeflowpipelines-default/transfer-learning-keras-training/data/tfrecord
