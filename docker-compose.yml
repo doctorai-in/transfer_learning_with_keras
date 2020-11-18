@@ -18,7 +18,6 @@ services:
   # Container for training
   training:
     image: keras-training-module
-    runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
@@ -31,7 +30,6 @@ services:
   # container for Serving model exposing to endpoints
   model-serving:
     image: tensorflow/serving
-    runtime: nvidia
     ports: 
       - "8501:8501"
       - "8500:8500"
